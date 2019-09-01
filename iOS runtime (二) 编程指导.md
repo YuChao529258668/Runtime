@@ -359,7 +359,7 @@ B | A C++ bool or a C99 _Bool
 v | A void
 * | A character string (char *)
 @ | An object (whether statically typed or typed id)
-# | A class object (Class)
+\# | A class object (Class)
 : | A method selector (SEL)
 [array type] | An array
 {name=type...} | A structure
