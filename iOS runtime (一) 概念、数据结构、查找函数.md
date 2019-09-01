@@ -1,3 +1,4 @@
+![runtime](https://upload-images.jianshu.io/upload_images/1235154-d52f122a2f5f2cb2.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 概念 class、object，SEL、IMP、method，查找方法的过程。
@@ -20,8 +21,8 @@ typedef struct objc_object *id;
 // 对象
 struct objc_object {
 private:
-isa_t isa;
-// 省略部分成员变量以及方法...
+    isa_t isa;
+    // 省略部分成员变量以及方法...
 }
 
 // Class
@@ -29,20 +30,20 @@ typedef struct objc_class *Class;
 
 // 类
 struct objc_class : objc_object {
-Class superclass;
-cache_t cache;             // formerly cache pointer and vtable
-class_data_bits_t bits;    // class_rw_t * plus custom rr/alloc flags
+    Class superclass;
+    cache_t cache;             // formerly cache pointer and vtable
+    class_data_bits_t bits;    // class_rw_t * plus custom rr/alloc flags
 
-// class_rw_t 有类的方法和属性列表。
-class_rw_t *data() { 
-return bits.data();
-}
-// 省略部分成员变量以及方法...
+    // class_rw_t 有类的方法和属性列表。
+    class_rw_t *data() { 
+        return bits.data();
+    }
+    // 省略部分成员变量以及方法...
 }
 
 // NSObject
 @interface NSObject <NSObject> {
-Class isa;
+    Class isa;
 }
 ```
 
@@ -71,7 +72,7 @@ objc_selector 的定义没找到。
 可以通过创建 SEL 的函数追踪：
 ```
 SEL sel_registerName(const char *name) {
-return __sel_registerName(name, 1, 1);     // YES lock, YES copy
+    return __sel_registerName(name, 1, 1);     // YES lock, YES copy
 }
 ```
 
@@ -79,17 +80,17 @@ return __sel_registerName(name, 1, 1);     // YES lock, YES copy
 ```
 static SEL __sel_registerName(const char *name, bool shouldLock, bool copy) 
 {
-SEL result = 0;
+    SEL result = 0;
 
-// 这里省略部分代码
+    // 这里省略部分代码
 
-if (!result) {
-result = sel_alloc(name, copy);
-// fixme choose a better container (hash not map for starters)
-NXMapInsert(namedSelectors, sel_getName(result), result);
-}
+    if (!result) {
+        result = sel_alloc(name, copy);
+        // fixme choose a better container (hash not map for starters)
+        NXMapInsert(namedSelectors, sel_getName(result), result);
+    }
 
-return result;
+    return result;
 }
 
 ```
@@ -98,8 +99,8 @@ return result;
 ```
 static SEL sel_alloc(const char *name, bool copy)
 {
-selLock.assertLocked();
-return (SEL)(copy ? strdupIfMutable(name) : name);    
+    selLock.assertLocked();
+    return (SEL)(copy ? strdupIfMutable(name) : name);    
 }
 ```
 因此看 strdupIfMutable 定义：
@@ -108,12 +109,12 @@ return (SEL)(copy ? strdupIfMutable(name) : name);
 static inline char *
 strdupIfMutable(const char *str)
 {
-size_t size = strlen(str) + 1;
-if (_dyld_is_memory_immutable(str, size)) {
-return (char *)str;
-} else {
-return (char *)memdup(str, size);
-}
+    size_t size = strlen(str) + 1;
+    if (_dyld_is_memory_immutable(str, size)) {
+        return (char *)str;
+    } else {
+        return (char *)memdup(str, size);
+    }
 }
 ```
 不管走的是 if 还是 else，可以看到 SEL 就是个 char *。
@@ -123,9 +124,9 @@ return (char *)memdup(str, size);
 static inline void *
 memdup(const void *mem, size_t len)
 {
-void *dup = malloc(len);
-memcpy(dup, mem, len);
-return dup;
+    void *dup = malloc(len);
+    memcpy(dup, mem, len);
+    return dup;
 }
 ```
 
@@ -135,8 +136,8 @@ return dup;
 ```
 const char *sel_getName(SEL sel) 
 {
-if (!sel) return "<null selector>";
-return (const char *)(const void*)sel;
+    if (!sel) return "<null selector>";
+    return (const char *)(const void*)sel;
 }
 ```
 直接强制类型转换了。
@@ -165,7 +166,7 @@ OC 函数可以通过 ``` - (IMP)methodForSelector:(SEL)aSelector ``` 获取。
 ```
 void (*setter)(id, SEL, BOOL);
 setter = (void (*)(id, SEL, BOOL))[target
-methodForSelector:@selector(setFilled:)];
+    methodForSelector:@selector(setFilled:)];
 setter(target, @selector(setFilled:), YES);
 ```
 保存 IMP 需要强制类型转换。
@@ -186,10 +187,10 @@ typedef struct method_t *Method;
 结构体 method_t ：
 ```
 struct method_t {
-SEL name;
-const char *types;
-MethodListIMP imp; // MethodListIMP 是 IMP 的别名
-// 这里省略了一个 struct SortBySELAddress
+    SEL name;
+    const char *types;
+    MethodListIMP imp; // MethodListIMP 是 IMP 的别名
+    // 这里省略了一个 struct SortBySELAddress
 };
 
 // using 是定义别名，类似 typedef。
@@ -205,15 +206,15 @@ Method 有 SEL 函数名，char * 函数类型，IMP 方法实现。
 转换的代码如下：
 ```
 static struct /*_method_list_t*/ {
-unsigned int entsize;  // sizeof(struct _objc_method)
-unsigned int method_count;
-struct _objc_method method_list[6];
+	unsigned int entsize;  // sizeof(struct _objc_method)
+	unsigned int method_count;
+	struct _objc_method method_list[6];
 } _OBJC_$_INSTANCE_METHODS_Test __attribute__ ((used, section ("__DATA,__objc_const"))) = {
-sizeof(_objc_method),
-6,
-{(struct objc_selector *)"dealloc", "v16@0:8", (void *)_I_Test_dealloc},
-{(struct objc_selector *)"myName", "@16@0:8", (void *)_I_Test_myName},
-{(struct objc_selector *)"setMyName:", "v24@0:8@16", (void *)_I_Test_setMyName_}
+	sizeof(_objc_method),
+	6,
+	{(struct objc_selector *)"dealloc", "v16@0:8", (void *)_I_Test_dealloc},
+	{(struct objc_selector *)"myName", "@16@0:8", (void *)_I_Test_myName},
+	{(struct objc_selector *)"setMyName:", "v24@0:8@16", (void *)_I_Test_setMyName_}
 };
 ```
 
@@ -254,13 +255,13 @@ OC 用于查找方法实现的函数：
 看下它的实现：
 ```
 + (IMP)methodForSelector:(SEL)sel {
-if (!sel) [self doesNotRecognizeSelector:sel];
-return object_getMethodImplementation((id)self, sel);
+    if (!sel) [self doesNotRecognizeSelector:sel];
+    return object_getMethodImplementation((id)self, sel);
 }
 
 - (IMP)methodForSelector:(SEL)sel {
-if (!sel) [self doesNotRecognizeSelector:sel];
-return object_getMethodImplementation(self, sel);
+    if (!sel) [self doesNotRecognizeSelector:sel];
+    return object_getMethodImplementation(self, sel);
 }
 ```
 
@@ -268,8 +269,8 @@ return object_getMethodImplementation(self, sel);
 ```
 IMP object_getMethodImplementation(id obj, SEL name)
 {
-Class cls = (obj ? obj->getIsa() : nil);
-return class_getMethodImplementation(cls, name);
+    Class cls = (obj ? obj->getIsa() : nil);
+    return class_getMethodImplementation(cls, name);
 }
 ```
 
@@ -277,16 +278,16 @@ return class_getMethodImplementation(cls, name);
 ```
 IMP class_getMethodImplementation(Class cls, SEL sel)
 {
-IMP imp;
-if (!cls  ||  !sel) return nil;
+    IMP imp;
+    if (!cls  ||  !sel) return nil;
 
-imp = lookUpImpOrNil(cls, sel, nil, 
-YES/*initialize*/, YES/*cache*/, YES/*resolver*/);
+    imp = lookUpImpOrNil(cls, sel, nil, 
+           YES/*initialize*/, YES/*cache*/, YES/*resolver*/);
 
-if (!imp) {
-return _objc_msgForward;
-}
-return imp;
+    if (!imp) {
+        return _objc_msgForward;
+    }
+    return imp;
 }
 ```
 
@@ -294,29 +295,29 @@ return imp;
 ```
 // 简化后
 IMP lookUpImpOrForward(Class cls, SEL sel, id inst, 
-bool initialize, bool cache, bool resolver)
+                       bool initialize, bool cache, bool resolver)
 {
-IMP imp = nil;
+    IMP imp = nil;
 
-// 省略从 cache 查找的过程
-// 省略可能要初始化 class 的过程
+    // 省略从 cache 查找的过程
+    // 省略可能要初始化 class 的过程
 
-// Try this class's method lists.
-{
-Method meth = getMethodNoSuper_nolock(cls, sel);
-if (meth) {
-log_and_fill_cache(cls, meth->imp, sel, inst, cls);
-imp = meth->imp;
-goto done;
-}
-}
+    // Try this class's method lists.
+    {
+        Method meth = getMethodNoSuper_nolock(cls, sel);
+        if (meth) {
+            log_and_fill_cache(cls, meth->imp, sel, inst, cls);
+            imp = meth->imp;
+            goto done;
+        }
+    }
 
-// 省略从父类查找的过程
-// 省略 method resolver 的过程
-// 省略 method forwarding 的过程
+    // 省略从父类查找的过程
+    // 省略 method resolver 的过程
+    // 省略 method forwarding 的过程
 
-done:
-return imp;
+ done:
+    return imp;
 }
 ```
 
@@ -329,15 +330,15 @@ return imp;
 static method_t *
 getMethodNoSuper_nolock(Class cls, SEL sel)
 {
-for (auto mlists = cls->data()->methods.beginLists(), 
-end = cls->data()->methods.endLists(); 
-mlists != end;
-++mlists)
-{
-method_t *m = search_method_list(*mlists, sel);
-if (m) return m;
-}
-return nil;
+    for (auto mlists = cls->data()->methods.beginLists(), 
+              end = cls->data()->methods.endLists(); 
+         mlists != end;
+         ++mlists)
+    {
+        method_t *m = search_method_list(*mlists, sel);
+        if (m) return m;
+    }
+    return nil;
 }
 ```
 
@@ -348,18 +349,18 @@ methods 是一个 method_array_t 类，保存类的方法列表。
 ```
 static method_t *search_method_list(const method_list_t *mlist, SEL sel)
 {
-int methodListIsFixedUp = mlist->isFixedUp();
-int methodListHasExpectedSize = mlist->entsize() == sizeof(method_t);
-
-if (__builtin_expect(methodListIsFixedUp && methodListHasExpectedSize, 1)) {
-return findMethodInSortedMethodList(sel, mlist);
-} else {
-// Linear search of unsorted method list
-for (auto& meth : *mlist) {
-if (meth.name == sel) return &meth;
-}
-}
-return nil;
+    int methodListIsFixedUp = mlist->isFixedUp();
+    int methodListHasExpectedSize = mlist->entsize() == sizeof(method_t);
+    
+    if (__builtin_expect(methodListIsFixedUp && methodListHasExpectedSize, 1)) {
+        return findMethodInSortedMethodList(sel, mlist);
+    } else {
+        // Linear search of unsorted method list
+        for (auto& meth : *mlist) {
+            if (meth.name == sel) return &meth;
+        }
+    }
+    return nil;
 }
 ```
 

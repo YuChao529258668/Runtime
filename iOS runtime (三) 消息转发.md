@@ -83,7 +83,7 @@ const char *types 是函数类型，比如 "v@:"，v 是返回类型 void，@ �
 // 转换后的 C语言函数
 void myMethodIMP(id self, SEL _cmd)
 {
-// implementation ....
+    // implementation ....
 }
 ```
 
@@ -98,30 +98,30 @@ void myMethodIMP(id self, SEL _cmd)
 
 // 要添加的方法
 - (void)funOfClassA {
-// 注意，这里输出的是 "ClassA funA"，而不是 "ClassA funOfClassA"。
-// 因为外面是通过 [obj performSelector:@selector(funA)] 来调用的
-// 如果是直接调用 funOfClassA 才会输出 "ClassA funOfClassA"。
-// self 是消息的 target，_cmd 是消息的 SEL。
-NSLog(@"%@ %@", self.class, NSStringFromSelector(_cmd));
+    // 注意，这里输出的是 "ClassA funA"，而不是 "ClassA funOfClassA"。
+    // 因为外面是通过 [obj performSelector:@selector(funA)] 来调用的
+    // 如果是直接调用 funOfClassA 才会输出 "ClassA funOfClassA"。
+    // self 是消息的 target，_cmd 是消息的 SEL。
+    NSLog(@"%@ %@", self.class, NSStringFromSelector(_cmd));
 }
 
 // 动态添加方法
 + (BOOL)resolveInstanceMethod:(SEL)sel {
-// 如果外面调用了 funA 才动态添加方法 funOfClassA。
-// 添加是指把 SEL funA 和 funOfClassA 的方法实现地址放到
-// 一个 Method 里面，然后添加到类的方法列表。
-if ([NSStringFromSelector(sel) isEqualToString:@"funA"]) {
-// 获取 SEL 和 IMP
-SEL selToAdd = @selector(funOfClassA); 
-IMP imp = class_getMethodImplementation(self, selToAdd);
+    // 如果外面调用了 funA 才动态添加方法 funOfClassA。
+    // 添加是指把 SEL funA 和 funOfClassA 的方法实现地址放到
+    // 一个 Method 里面，然后添加到类的方法列表。
+    if ([NSStringFromSelector(sel) isEqualToString:@"funA"]) {
+        // 获取 SEL 和 IMP
+        SEL selToAdd = @selector(funOfClassA); 
+        IMP imp = class_getMethodImplementation(self, selToAdd);
 
-// 创建 Method 并添加到方法列表
-BOOL success = class_addMethod(self, sel, imp, "v@:"); 
-NSLog(@"%@ 添加方法%@", self, success?@"成功":@"失败");
-return success;
-} else {
-return [super resolveInstanceMethod:sel];
-}
+        // 创建 Method 并添加到方法列表
+        BOOL success = class_addMethod(self, sel, imp, "v@:"); 
+        NSLog(@"%@ 添加方法%@", self, success?@"成功":@"失败");
+        return success;
+    } else {
+        return [super resolveInstanceMethod:sel];
+    }
 }
 
 @end
@@ -130,10 +130,10 @@ return [super resolveInstanceMethod:sel];
 测试代码：
 ```
 - (void)viewDidLoad {
-[super viewDidLoad];
+    [super viewDidLoad];
 
-ClassA *obj = [ClassA new];
-[obj performSelector:@selector(funA)];
+    ClassA *obj = [ClassA new];
+    [obj performSelector:@selector(funA)];
 }
 ```
 
@@ -150,7 +150,7 @@ ClassA funA
 // 要添加的方法
 void myMethodIMP(id self, SEL _cmd)
 {
-NSLog(@"%@ %@", [self class], NSStringFromSelector(_cmd));
+    NSLog(@"%@ %@", [self class], NSStringFromSelector(_cmd));
 }
 ```
 
@@ -190,40 +190,40 @@ ClassA 的 forwardingTargetForSelector 方法：
 
 ```
 - (id)forwardingTargetForSelector:(SEL)aSelector {
-id target = nil;
+    id target = nil;
+    
+    if ([self.objb respondsToSelector:aSelector]) {
+        target = self.objb;
+    } else if ([self.objc respondsToSelector:aSelector]) {
+        target = self.objc;
+    }
 
-if ([self.objb respondsToSelector:aSelector]) {
-target = self.objb;
-} else if ([self.objc respondsToSelector:aSelector]) {
-target = self.objc;
-}
-
-if (target) {
-NSString *cmd = NSStringFromSelector(_cmd);
-NSString *sel = NSStringFromSelector(aSelector);
-NSLog(@"[%@  %@], 消息的SEL: %@, 转发的target: %@ ", self.class, cmd, sel, [target class]);
-return target;
-} else {
-return [super forwardingTargetForSelector:aSelector];
-}
+    if (target) {
+        NSString *cmd = NSStringFromSelector(_cmd);
+        NSString *sel = NSStringFromSelector(aSelector);
+        NSLog(@"[%@  %@], 消息的SEL: %@, 转发的target: %@ ", self.class, cmd, sel, [target class]);
+        return target;
+    } else {
+        return [super forwardingTargetForSelector:aSelector];
+    }
 }
 ```
 
 ClassB 的 funB 方法：
 ```
 - (void)funB {
-NSLog(@"%@ %@", self.class, NSStringFromSelector(_cmd));
+    NSLog(@"%@ %@", self.class, NSStringFromSelector(_cmd));
 }
 ```
 
 测试代码：
 ```
 - (void)viewDidLoad {
-[super viewDidLoad];
+    [super viewDidLoad];
 
-ClassA *obj = [ClassA new];
-//    [obj performSelector:@selector(funA)];
-[obj performSelector:@selector(funB)];
+    ClassA *obj = [ClassA new];
+    //    [obj performSelector:@selector(funA)];
+    [obj performSelector:@selector(funB)];
 }
 ```
 
@@ -240,22 +240,22 @@ ClassB funB
 // ClassA.m
 // 1、通过函数名判断
 - (BOOL)respondsToSelector:(SEL)aSelector {
-if ([NSStringFromSelector(aSelector) isEqualToString:@"funB"]) {
-return YES;
-} else {
-return [super respondsToSelector:aSelector];
-}
+    if ([NSStringFromSelector(aSelector) isEqualToString:@"funB"]) {
+        return YES;
+    } else {
+        return [super respondsToSelector:aSelector];
+    }
 }
 
 // 2、或者通过持有的对象判断
 - (BOOL)respondsToSelector:(SEL)aSelector {
-if ([self.objb respondsToSelector:aSelector]) {
-return YES;
-} else if ([self.objc respondsToSelector:aSelector]) {
-return YES;
-} else {
-return [super respondsToSelector:aSelector];
-}
+    if ([self.objb respondsToSelector:aSelector]) {
+        return YES;
+    } else if ([self.objc respondsToSelector:aSelector]) {
+        return YES;
+    } else {
+        return [super respondsToSelector:aSelector];
+    }
 }
 ```
 
@@ -306,27 +306,27 @@ return [super respondsToSelector:aSelector];
 先看测试代码：
 ```
 - (void)viewDidLoad {
-[super viewDidLoad];
+    [super viewDidLoad];
 
-ClassA *obj = [ClassA new];
+    ClassA *obj = [ClassA new];
 //    [obj performSelector:@selector(funA)];
 //    [obj performSelector:@selector(funB)];
-
+    
 //    if ([obj respondsToSelector:@selector(funB)]) {
 //        [obj performSelector:@selector(funB)];
 //    }
-
-// 测试修改消息的 SEL 和 target
-if ([obj respondsToSelector:@selector(funC)]) {
-[obj performSelector:@selector(funC)];
-}
-
-// 测试修改消息的参数和返回值
-if ([obj respondsToSelector:@selector(printNumber:)]) {
-id result = [obj performSelector:@selector(printNumber:) withObject:@(222)];
-// 外部获取的返回值 resutl = 666
-NSLog(@"外部获取的返回值 resutl = %@", result);
-}
+    
+    // 测试修改消息的 SEL 和 target
+    if ([obj respondsToSelector:@selector(funC)]) {
+        [obj performSelector:@selector(funC)];
+    }
+    
+    // 测试修改消息的参数和返回值
+    if ([obj respondsToSelector:@selector(printNumber:)]) {
+        id result = [obj performSelector:@selector(printNumber:) withObject:@(222)];
+        // 外部获取的返回值 resutl = 666
+        NSLog(@"外部获取的返回值 resutl = %@", result);
+    }
 ```
 
 由于 ClassA 没有实现 funC 和 printNumber: 方法，因此要重写 respondsToSelector 方法：
@@ -334,17 +334,17 @@ NSLog(@"外部获取的返回值 resutl = %@", result);
 ```
 // ClassA.m
 - (BOOL)respondsToSelector:(SEL)aSelector {
-if ([NSStringFromSelector(aSelector) isEqualToString:@"funA"]) {
-return YES;
-} else if ([self.objb respondsToSelector:aSelector]) { // funB
-return YES;
-} else if ([self.objc respondsToSelector:aSelector]) { // printNumber:
-return YES;
-} else if ([NSStringFromSelector(aSelector) isEqualToString:@"funC"]) {
-return YES;
-} else {
-return [super respondsToSelector:aSelector];
-}
+    if ([NSStringFromSelector(aSelector) isEqualToString:@"funA"]) {
+        return YES;
+    } else if ([self.objb respondsToSelector:aSelector]) { // funB
+        return YES;
+    } else if ([self.objc respondsToSelector:aSelector]) { // printNumber:
+        return YES;
+    } else if ([NSStringFromSelector(aSelector) isEqualToString:@"funC"]) {
+        return YES;
+    } else {
+        return [super respondsToSelector:aSelector];
+    }
 }
 ```
 
@@ -352,7 +352,7 @@ ClassC 的 funOfClassC 方法：
 ```
 // 外部调用的 funC 会修改为 funOfClassC
 - (void)funOfClassC {
-NSLog(@"%@ %@", self.class, NSStringFromSelector(_cmd));
+    NSLog(@"%@ %@", self.class, NSStringFromSelector(_cmd));
 }
 ```
 
@@ -360,8 +360,8 @@ ClassC 的 printNumber 方法：
 ```
 // 打印并返回传入的 NSNumber
 - (NSNumber *)printNumber:(NSNumber *)num {
-NSLog(@"[%@ %@], number = %@", self.class, NSStringFromSelector(_cmd), num);
-return num;
+    NSLog(@"[%@ %@], number = %@", self.class, NSStringFromSelector(_cmd), num);
+    return num;
 }
 ```
 
@@ -371,29 +371,29 @@ return num;
 // 返回 nil 不会调用 forwardInvocation ，然后 unrecognized selector 崩溃
 // NSMethodSignature 的函数类型不对的话，可能会崩溃
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
-if ([NSStringFromSelector(aSelector) isEqualToString:@"funC"]) {
-// 自己创建函数签名
-// funC 会替换为 funOfClassC，因此要返回后者的方法签名
-// 函数声明 - (void)funOfClassC
-// "v@:" 表示返回值 是 void，形参分别是对象、SEL
-NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:"v@:"];
-return ms;
-
-} else if ([NSStringFromSelector(aSelector) isEqualToString:@"printNumber:"]) {
-// 可以通过能响应 aSelector 的对象获取
-NSMethodSignature *signature = [self.objc methodSignatureForSelector:aSelector];
-if (signature) {
-return signature;
-} else {
-// 也可以自己创建
-// 函数声明 - (NSNumber *)printNumber:(NSNumber *)num
-// "@@:@" 表示返回值是对象，形参分别是对象、SEL、对象
-NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:"@@:@"];
-return ms;
-}
-} else {
-return [super methodSignatureForSelector:aSelector];
-}
+    if ([NSStringFromSelector(aSelector) isEqualToString:@"funC"]) {
+        // 自己创建函数签名
+        // funC 会替换为 funOfClassC，因此要返回后者的方法签名
+        // 函数声明 - (void)funOfClassC
+        // "v@:" 表示返回值 是 void，形参分别是对象、SEL
+        NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:"v@:"];
+        return ms;
+        
+    } else if ([NSStringFromSelector(aSelector) isEqualToString:@"printNumber:"]) {
+        // 可以通过能响应 aSelector 的对象获取
+        NSMethodSignature *signature = [self.objc methodSignatureForSelector:aSelector];
+        if (signature) {
+            return signature;
+        } else {
+            // 也可以自己创建
+            // 函数声明 - (NSNumber *)printNumber:(NSNumber *)num
+            // "@@:@" 表示返回值是对象，形参分别是对象、SEL、对象
+            NSMethodSignature *ms = [NSMethodSignature signatureWithObjCTypes:"@@:@"];
+            return ms;
+        }
+    } else {
+        return [super methodSignatureForSelector:aSelector];
+    }
 }
 ```
 
@@ -403,60 +403,60 @@ ClassA 的 forwardInvocation 方法：
 // 这里如果什么都不做也不会崩溃，因为重写了父类的同名方法。
 // NSObject 默认实现是调用 doesNotRecognizeSelector 抛出异常。
 - (void)forwardInvocation:(NSInvocation *)anInvocation {
-
-//  1、演示修改 target 和 SEL
-// 这里是把 SEL funC 替换为 funOfClassC
-// 因此是通过字符串来判断，而不是 respondsToSelector
-if ([NSStringFromSelector(anInvocation.selector) isEqualToString:@"funC"]) {
-// 修改消息的 SEL
-anInvocation.selector = @selector(funOfClassC);
-// 修改消息的 target
-anInvocation.target = self.objc;
-// 发送消息
-[anInvocation invoke];
-// 也可以直接发送消息，不用修改 target
+    
+    //  1、演示修改 target 和 SEL
+    // 这里是把 SEL funC 替换为 funOfClassC
+    // 因此是通过字符串来判断，而不是 respondsToSelector
+    if ([NSStringFromSelector(anInvocation.selector) isEqualToString:@"funC"]) {
+        // 修改消息的 SEL
+        anInvocation.selector = @selector(funOfClassC);
+        // 修改消息的 target
+        anInvocation.target = self.objc;
+        // 发送消息
+        [anInvocation invoke];
+        // 也可以直接发送消息，不用修改 target
 //        [anInvocation invokeWithTarget:self.objc];
-
-} else if ([NSStringFromSelector(anInvocation.selector) isEqualToString:@"printNumber:"]) {
-// 2、演示修改参数和捕获返回值
-// 函数声明 - (NSNumber *)printNumber:(NSNumber *)num
-// 外部调用 [obj performSelector:@selector(printNumber:) withObject:@(222)];
-
-// 查看参数
-// index 0 和 1 是隐藏参数 self 和 _cmd
+        
+    } else if ([NSStringFromSelector(anInvocation.selector) isEqualToString:@"printNumber:"]) {
+        // 2、演示修改参数和捕获返回值
+        // 函数声明 - (NSNumber *)printNumber:(NSNumber *)num
+        // 外部调用 [obj performSelector:@selector(printNumber:) withObject:@(222)];
+        
+        // 查看参数
+        // index 0 和 1 是隐藏参数 self 和 _cmd
 //        id obj = nil; // 会闪退
 //        void *obj = nil; // 不会闪退
-__autoreleasing id obj = nil; // 不会闪退
-[anInvocation getArgument:&obj atIndex:0];        
-SEL sel = 0; // printNumber:
-[anInvocation getArgument:&sel atIndex:1];
-__autoreleasing NSNumber *argument = nil; // 外部传入 222
-[anInvocation getArgument:&argument atIndex:2];
+        __autoreleasing id obj = nil; // 不会闪退
+        [anInvocation getArgument:&obj atIndex:0];        
+        SEL sel = 0; // printNumber:
+        [anInvocation getArgument:&sel atIndex:1];
+        __autoreleasing NSNumber *argument = nil; // 外部传入 222
+        [anInvocation getArgument:&argument atIndex:2];
+        
+        // 先调用一次
+        [anInvocation invokeWithTarget:self.objc];
+        // 获取返回值
+        __autoreleasing NSNumber *result = nil;
+        [anInvocation getReturnValue:&result];
+        NSLog(@"ClassA result1 = %@", result); // 222
 
-// 先调用一次
-[anInvocation invokeWithTarget:self.objc];
-// 获取返回值
-__autoreleasing NSNumber *result = nil;
-[anInvocation getReturnValue:&result];
-NSLog(@"ClassA result1 = %@", result); // 222
-
-// 修改传进来的参数
-__autoreleasing NSNumber *number = @444;
-[anInvocation setArgument:&number atIndex:2];
-
-// 再调用一次
-[anInvocation invokeWithTarget:self.objc]; 
-// 获取返回值
-[anInvocation getReturnValue:&result];
-NSLog(@"ClassA result2 = %@", result); // 444
-
-// 修改返回值，外部获取的返回值就是 666
-result = @666;
-[anInvocation setReturnValue:&result];
-
-} else {
-[super forwardInvocation:anInvocation];
-}
+        // 修改传进来的参数
+        __autoreleasing NSNumber *number = @444;
+        [anInvocation setArgument:&number atIndex:2];
+        
+        // 再调用一次
+        [anInvocation invokeWithTarget:self.objc]; 
+        // 获取返回值
+        [anInvocation getReturnValue:&result];
+        NSLog(@"ClassA result2 = %@", result); // 444
+        
+        // 修改返回值，外部获取的返回值就是 666
+        result = @666;
+        [anInvocation setReturnValue:&result];
+        
+    } else {
+        [super forwardInvocation:anInvocation];
+    }
 }
 ```
 
