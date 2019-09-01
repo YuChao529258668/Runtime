@@ -85,13 +85,13 @@ objc_msgSend 找到并调用方法实现时，会传递两个隐藏参数：
 ```
 - (id)strange
 {
-// 通过其他函数获取 target 和 method
-id  target = getTheReceiver();
-SEL method = getTheMethod();
-
-if ( target == self || method == _cmd )
-return nil;
-return [target performSelector:method];
+    // 通过其他函数获取 target 和 method
+    id  target = getTheReceiver();
+    SEL method = getTheMethod();
+ 
+    if ( target == self || method == _cmd )
+        return nil;
+    return [target performSelector:method];
 }
 ```
 
@@ -114,11 +114,11 @@ NSObject 的 methodForSelector: 方法可以获取方法实现的指针，然后
 ```
 void (*setter)(id, SEL, BOOL);
 int i;
-
+ 
 setter = (void (*)(id, SEL, BOOL))[target
-methodForSelector:@selector(setFilled:)];
+    methodForSelector:@selector(setFilled:)];
 for ( i = 0 ; i < 1000 ; i++ )
-setter(targetList[i], @selector(setFilled:), YES);
+    setter(targetList[i], @selector(setFilled:), YES);
 ```
 
 方法 setFilled: 只有 1 个参数，指针 setter 却有 3 个参数。
@@ -158,7 +158,7 @@ Objective-C 的方法最少需要两个参数：self 和 _cmd。
 先定义被添加的方法：
 ```
 void dynamicMethodIMP(id self, SEL _cmd) {
-// implementation ....
+    // implementation ....
 }
 ```
 
@@ -168,12 +168,12 @@ void dynamicMethodIMP(id self, SEL _cmd) {
 @implementation MyClass
 + (BOOL)resolveInstanceMethod:(SEL)aSEL
 {
-if (aSEL == @selector(resolveThisMethodDynamically)) {
-// 添加自定义方法
-class_addMethod([self class], aSEL, (IMP)dynamicMethodIMP, "v@:");
-return YES;
-}
-return [super resolveInstanceMethod:aSEL];
+    if (aSEL == @selector(resolveThisMethodDynamically)) {
+          // 添加自定义方法
+          class_addMethod([self class], aSEL, (IMP)dynamicMethodIMP, "v@:");
+          return YES;
+    }
+    return [super resolveInstanceMethod:aSEL];
 }
 @end
 ```
@@ -230,9 +230,9 @@ OC 函数的 IMP 可以通过下面的函数获取：
 // 方式 2
 - (id)negotiate
 {
-if ( [someOtherObject respondsTo:@selector(negotiate)] )
-return [someOtherObject negotiate];
-return self;
+    if ( [someOtherObject respondsTo:@selector(negotiate)] )
+        return [someOtherObject negotiate];
+    return self;
 }
 ```
 
@@ -243,11 +243,11 @@ return self;
 // 方式 3
 - (void)forwardInvocation:(NSInvocation *)anInvocation
 {
-if ([someOtherObject respondsToSelector:
-[anInvocation selector]])
-[anInvocation invokeWithTarget:someOtherObject];
-else
-[super forwardInvocation:anInvocation];
+    if ([someOtherObject respondsToSelector:
+            [anInvocation selector]])
+        [anInvocation invokeWithTarget:someOtherObject];
+    else
+        [super forwardInvocation:anInvocation];
 }
 ```
 
@@ -289,14 +289,14 @@ forwardInvocation: 方法可以成为一个派发中心，把无法识别的消�
 ```
 - (BOOL)respondsToSelector:(SEL)aSelector
 {
-if ( [super respondsToSelector:aSelector] )
-return YES;
-else {
-/* Here, test whether the aSelector message can     *
-* be forwarded to another object and whether that  *
-* object can respond to it. Return YES if it can.  */
-}
-return NO;
+    if ( [super respondsToSelector:aSelector] )
+        return YES;
+    else {
+        /* Here, test whether the aSelector message can     *
+         * be forwarded to another object and whether that  *
+         * object can respond to it. Return YES if it can.  */
+    }
+    return NO;
 }
 ```
 
@@ -305,11 +305,11 @@ Similarly, if an object forwards any remote messages it receives, it should have
 ```
 - (NSMethodSignature*)methodSignatureForSelector:(SEL)selector
 {
-NSMethodSignature* signature = [super methodSignatureForSelector:selector];
-if (!signature) {
-signature = [surrogate methodSignatureForSelector:selector];
-}
-return signature;
+    NSMethodSignature* signature = [super methodSignatureForSelector:selector];
+    if (!signature) {
+       signature = [surrogate methodSignatureForSelector:selector];
+    }
+    return signature;
 }
 ```
 
@@ -400,18 +400,18 @@ demo：
 @end
 
 - (void)test6 {
-Class class = self.class;
-unsigned int count;
-objc_property_t *ps = class_copyPropertyList(class, &count);
-
-for (int i = 0; i < count; i++) {
-objc_property_t p = ps[i]; 
-// myFloat
-const char *name = property_getName(p); 
-// Tf,N,V_myFloat
-const char *atttribute = property_getAttributes(p); 
-fprintf(stdout, "%s, %s \n", name, atttribute);
-}
+    Class class = self.class;
+    unsigned int count;
+    objc_property_t *ps = class_copyPropertyList(class, &count);
+    
+    for (int i = 0; i < count; i++) {
+        objc_property_t p = ps[i]; 
+        // myFloat
+        const char *name = property_getName(p); 
+        // Tf,N,V_myFloat
+        const char *atttribute = property_getAttributes(p); 
+        fprintf(stdout, "%s, %s \n", name, atttribute);
+    }
 }
 ```
 
